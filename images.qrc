@@ -1,0 +1,9 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource>
+<file alias="HIT.png">Graphics/HIT.png</file>
+<file alias="MISS.png">Graphics/MISS.png</file>
+<file alias="SHIP.png">Graphics/SHIP.png</file>
+<file alias="EMPTY.png">Graphics/EMPTY.png</file>
+</qresource>
+</RCC>
