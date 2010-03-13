@@ -2,11 +2,11 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from time import sleep
-import battleships
+import battleshipslib
 import images
 import sys
 
-log = battleships.log
+log = battleshipslib.log
 
 size = 30
 
@@ -49,7 +49,7 @@ class ConnectionWindow(QDialog):
         serverlayout = QHBoxLayout()
         serverlayout.addWidget(QLabel('<center><h4>Server Infomation'))
         serverlayout.addWidget(QLabel('<center>Send this invitation code to your partner:'))
-        serverlayout.addWidget(QLabel('%s' % battleships.ip))
+        serverlayout.addWidget(QLabel('%s' % battleshipslib.ip))
         
         seperator = QFrame()
         seperator.setFrameShape(QFrame.VLine)
@@ -102,7 +102,7 @@ class GameWindow(QMainWindow):
         super(GameWindow, self).__init__(parent)
         
         #GAME
-        self.game = battleships.board()
+        self.game = battleshipslib.board()
         self.game.ships = [5,4,3,2,2]
         
         self.VALUES = []
