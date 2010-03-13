@@ -1,6 +1,8 @@
 #!/bin/python
 import socket
 import sys
+import select
+import time
 
 global states
 states = {"EMPTY": True, "SHIP": True, "MISS": False, "HIT": False}
@@ -14,10 +16,12 @@ ip = s.getsockname()[0]
 del s
 
 global port
-port = 1764
+port = 1768
 
-def log(info):
-    sys.stderr.write(str(info) + '\n')
+def log(*args):
+    for arg in args:
+        sys.stderr.write(str(arg))
+    sys.stderr.write('\n')
 
 class board():
     def __init__(self):
@@ -73,10 +77,15 @@ class board():
         
         return True
     
-    def reciveShot(self):
+    def reciveShot(self, type = 'Blocking'):
         '''True if hit, False if not
         raises InvalidLine if not vert or horis line'''
-        coord = self.connection.recive()
+        if type == 'Blocking':
+            coord = self.connection.recive()
+        elif type == 'NonBlocking':
+            coord = self.connection.reciveone()
+            if not coord:
+                return
         if coord[:7] != '<coord>':
             self.connection.close()
             raise RuntimeError
@@ -87,6 +96,7 @@ class board():
             self.values[coord[0]][coord[1]] = "HIT"
             if self.checkLost():
                 self.connection.send('<youwin>')
+                self.game = "LOST"
             else:
                 self.connection.send('<coordrtn>True')
             return True
@@ -138,13 +148,25 @@ class connection():
         self.sock.bind((ip, port))
         self.sock.listen(1)
         (self.socket, self.address) = self.sock.accept()
+        self.socket.setblocking(0)
     
     def setClient(self, address):
         self.type = 'Client'
         self.sock.connect((address, port))
         self.socket = self.sock
+        self.socket.setblocking(0)
+    
+    def check(self, timeout = 60):
+        readable, writeable, errorable = select.select([self.socket],
+                                                       [self.socket], 
+                                                       [self.socket], 
+                                                       timeout)
+        return (bool(readable), bool(writeable), bool(errorable))
     
     def send(self, content):
+        if self.check()[2]:
+            self.socket.close()
+            raise RuntimeError
         class ToLong(Exception): pass
         length = len(content)
         if length > 100:
@@ -153,17 +175,33 @@ class connection():
             length = '0' + str(length)
         else:
             length = str(length)
-        sent = self.socket.send(str(length) + content)
-        log('Send: '+length + content)
-        if sent == 0:
-            self.socket.close()
-            raise RuntimeError
+        self.socket.send(str(length) + content)
+        log('Sent: '+length + content)
     
     def recive(self):
-        length = self.socket.recv(2)
-        if length == '':
+        if self.check()[2]:
             self.socket.close()
             raise RuntimeError
+        while not self.check()[0]:
+            time.sleep(0.1)
+            if self.check()[2]:
+                self.socket.close()
+                raise RuntimeError
+        length = self.socket.recv(2)
+        length = int(length)
+        content = self.socket.recv(length)
+        log('Recived: ' + str(length) + content)
+        return content
+    
+    def reciveone(self):
+        if self.check()[2]:
+            self.socket.close()
+            raise RuntimeError
+        elif not self.check()[0]:
+            return False
+        length = self.socket.recv(2)
+        if length == '':
+            return False
         length = int(length)
         content = self.socket.recv(length)
         log('Recived: ' + str(length) + content)

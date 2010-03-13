@@ -12,6 +12,8 @@ size = 30
 
 app = QApplication(sys.argv)
 
+app.setWindowIcon(QIcon(':/LOGO.png'))
+
 EMPTY = QPixmap(':/EMPTY.png').scaled(size,size)
 HIT = QPixmap(':/HIT.png').scaled(size,size)
 MISS = QPixmap(':/MISS.png').scaled(size,size)
@@ -22,9 +24,6 @@ class square(QLabel):
         super(square, self).__init__(parent)
         
         self.value = value
-        
-        pixmap = QPixmap(':/%s.png' % value)
-        pixmap = pixmap.scaled(30, 30)
         
         self.setPixmap(eval(value))
         
@@ -68,13 +67,43 @@ class ConnectionWindow(QDialog):
         self.connect(buttonbox, SIGNAL('accepted ()'),
                      self.accept)
 
+class ReciveThread(QThread):
+    
+    over = pyqtSignal()
+    
+    def shot(self, parent):
+        returncode = parent.game.reciveShot(type='NonBlocking')
+        if returncode:
+            parent.Output.append('\n\nOne of your ships was hit.')
+            return True
+        elif returncode == None:
+            return None
+        else:
+            parent.Output.append('\n\nThe enemy missed.')
+            return False
+        
+        parent.Output.append('\n\nPlease enter the coordinates you would like us to target')
+    
+    def run(self):
+        self.parent.Output.append('\n\nWaiting for a shot.')
+        shot = self.shot(self.parent)
+        while shot == None:
+            sleep(0.2)
+            shot = self.shot(self.parent)
+        
+        self.over.emit()
+        
+        self.connect(self.parent.Input, SIGNAL("editingFinished ()"),
+                                        self.parent.sendShot)
+        
+
 class GameWindow(QMainWindow):
     def __init__(self, parent=None):
         super(GameWindow, self).__init__(parent)
         
         #GAME
         self.game = battleships.board()
-        self.game.ships = [2]
+        self.game.ships = [5,4,3,2,2]
         
         self.VALUES = []
         self.SHOTS = []
@@ -94,46 +123,26 @@ class GameWindow(QMainWindow):
         #Font.setCapitalization(QFont.AllUppercase)
         Font.setFamily('Monospace')
         self.Output.setCurrentFont(Font)
-        self.Output.setText('Welcome! Commander!')
+        self.Output.setText('Welcome to BattLeships')
         self.Input = QLineEdit()
         
         self.createsetLayout()
         
-        
+        self.setWindowTitle('Battleships')
         
         #Set connection type and ip and so forth
         dialog = ConnectionWindow(self)
         if dialog.exec_():
-            log('Dialog shown')
             if unicode(dialog.Input.text()) == '':
-                log('server')
+                log('Server')
                 self.game.connection.setServer()
-                log('Connected')
             else:
                 log('Client')
                 self.game.connection.setClient(unicode(dialog.Input.text()))
-                log('Connected')
         
-        content = ['This isn\'t a war. It never was a war, any more than there\'s ',
-        'war between man and ants. There\'s the ants builds their cities, live their ',
-        'lives, have wars, revolutions, until the men want them out of the way, and ',
-        'then they go out of the way. That\'s what we are now--just ants.\n \n',
-        'And so we end up with you, private parts.\n\n\n\n',
-        'Situation: The enemy have 5 ships in an area of 1200x1200m. We can shell',
-        ' any point in that square, and destroy anything within 100m of the shell impact. ',
-        'However, we are in an identical situation to the enemy. This is a problem.\n\n',
-        'Mission: Destroy all enemy ships before they destroy yours\n\n',
-        'Execution: Bomb \'em to hell!\n\n',
-        'Assesment: Are they dead? No? Bomb \'em to hell!\n\n\n\n',
-        'ALERT!! Before the enemy starts shelling, we have one last chance to move our ships.',
-        ' Move the ships by entering the coordinates of the bow of the ship, followed by the ',
-        'coordinates of the stern.\n\n',
-        'i.e. D3,D5\n\n',
-        'Ships avalible, listed by length:\n',
-        'Carrier. Length 5. Quantity 1.\n',
-        'Battleship. Length 4. Quantity 1.\n',
-        'Cruiser. Length 3. Quantity 1.\n',
-        'Tug. Length 2. Quantity 2.\n']
+        content = ['Place ships please. Lengths are: 5, 4, 3, 2, 2',
+                   '\n\nEnter coordinates in the form A1,B3, with A1 being the start of the ship, and B3 being the end',
+                   '\n\n']
         
         
         self.Output.setText(''.join(content))
@@ -143,8 +152,6 @@ class GameWindow(QMainWindow):
     
     
     def placeShip(self):
-        log('Placing ship')
-        log(self.game.ships)
         input = self.Input.text().split(',')
         self.Input.setText('')
         if len(input) != 2:
@@ -154,19 +161,18 @@ class GameWindow(QMainWindow):
         end = input[1]
         end = (int(end[1:])-1,'ABCDEFGHIJKL'.index(unicode(end[0]).capitalize()))
         returncode = self.game.placeShip(start, end)
-        log(returncode)
         if returncode:
             self.syncLists()
             if self.game.ships == []:
                 self.disconnect(self.Input, SIGNAL("editingFinished ()"),
                                             self.placeShip)
-                self.Output.append('\n\nShips have been moved. Hopefully not for the last time.')
+                self.Output.append('\n\nFinished placing ships')
                 
             else:
                 self.Output.append('\nYou have %i ships left to place %s' % (len(self.game.ships), str(tuple(self.game.ships))))
                 return
         else:
-            self.Output.append('THIS IS WAR SOLDIER! WE DON\'T HAVE TIME FOR MUCKING AROUND!')
+            self.Output.append('\nInvalid coordinates')
             return
         self.Input.setText('')
         self.syncLists()
@@ -174,48 +180,47 @@ class GameWindow(QMainWindow):
             self.connect(self.Input, SIGNAL("editingFinished ()"),
                                     self.sendShot)
         else:
-            self.Output.append('We\re  preparing to recive shots. Ok?')
-            self.connect(self.Input, SIGNAL("editingFinished ()"),
-                                                    self.reciveShot)
+            self.reciveShot()
+            self.syncLists()
     
     def reciveShot(self):
-        self.disconnect(self.Input, SIGNAL("editingFinished ()"),
-                                                    self.reciveShot)
-        log('reciving shot')
-        self.Output.append('\n\nWe can only wait now...')
-        returncode = self.game.reciveShot()
-        self.syncLists()
-        if returncode:
-            self.Output.append('\n\nIt appears a ship has been hit. May their soles rest in peace.')
-            if self.game.game == "LOST":
-                self.LostGame()
-        else:
-            self.Output.append('\n\nWe were lucky. They missed...')
         
-        self.Output.append('\n\nPlease enter the coordinates you would like us to target')
-        
-        self.connect(self.Input, SIGNAL("editingFinished ()"),
-                                        self.sendShot)
+        self.thread = ReciveThread()
+        self.thread.parent = self
+        self.thread.start()
+        self.thread.over.connect(self.syncLists)
     
     def sendShot(self):
-        log('sending shot')
+        coord = self.Input.text()
+        if len(coord) != 2:
+            return
         self.disconnect(self.Input, SIGNAL("editingFinished ()"),
                                 self.sendShot)
-        coord = self.Input.text()
         coord = (int(coord[1])-1,'ABCDEFGHIJKL'.index(coord[0]))
-        log (coord)
         returncode = self.game.sendShot(coord)
         if returncode:
-            self.Output.append('\n\nWe have hit the enemy. Today is a glorious day.')
+            self.Output.append('\n\nYou hit the enemy.')
             if self.game.game == "WON":
                 self.WonGame()
+            elif self.game.game == "LOST":
+                self.LostGame()
         else:
-            self.Output.append('\n\nI must regretfully inform you that we have missed the enemy on this occasion.' )
+            self.Output.append('\n\nYou missed the enemy.' )
         
-        self.Output.append('We\re  preparing to recive shots. Ok?')
-        self.connect(self.Input, SIGNAL("editingFinished ()"),
-                                                    self.reciveShot)
+        self.Input.setText('')
         
+        self.reciveShot()
+        self.syncLists()
+        
+    def WonGame(self):
+        dialog = QMessageBox('You won the game. Well done')
+        if dialog.exec_():
+            self.close()
+    
+    def LostGame(self):
+        dialog = QMessageBox('You lost the game. Better luck next time')
+        if dialog.exec_():
+            self.close()
     
     def createsetLayout(self):
         Layout = QGridLayout()
