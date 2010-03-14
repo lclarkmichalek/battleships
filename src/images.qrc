@@ -6,5 +6,6 @@
 <file alias="SHIP.png">Graphics/SHIP.png</file>
 <file alias="EMPTY.png">Graphics/EMPTY.png</file>
 <file alias="LOGO.png">Graphics/LOGO.png</file>
+<file alias="CONNECT.png">Graphics/CONNECT.png</file>
 </qresource>
 </RCC>

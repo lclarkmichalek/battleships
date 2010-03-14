@@ -23,16 +23,23 @@ import sys
 
 log = battleshipslib.log
 
-size = 30
+
 
 app = QApplication(sys.argv)
-
 app.setWindowIcon(QIcon(':/LOGO.png'))
-
+size = 30
 EMPTY = QPixmap(':/EMPTY.png').scaled(size,size)
 HIT = QPixmap(':/HIT.png').scaled(size,size)
 MISS = QPixmap(':/MISS.png').scaled(size,size)
 SHIP = QPixmap(':/SHIP.png').scaled(size,size)
+
+def encode(input):
+    output = input
+    return output
+
+def decode(input):
+    output = input
+    return output
 
 class square(QLabel):
     def __init__(self, row, column, parent=None, value="EMPTY"):
@@ -51,36 +58,38 @@ class square(QLabel):
         
         self.setPixmap(eval(value))
 
-class ConnectionWindow(QDialog):
+class ConnectionDialog(QDialog):
     def __init__(self, parent=None):
-        super(ConnectionWindow, self).__init__(parent)
+        super(ConnectionDialog, self).__init__(parent)
         
-        clientlayout = QHBoxLayout()
-        clientlayout.addWidget(QLabel('<center><h4>Client Infomation'))
-        clientlayout.addWidget(QLabel('<center>Enter your invite code below'))
+        clientlayout = QVBoxLayout()
+        clientlayout.addWidget(QLabel('<center><h4>If you have a connection code'))
+        clientlayout.addWidget(QLabel('<center>Enter your connection code below'))
         self.Input = QLineEdit()
         clientlayout.addWidget(self.Input)
         
-        serverlayout = QHBoxLayout()
-        serverlayout.addWidget(QLabel('<center><h4>Server Infomation'))
-        serverlayout.addWidget(QLabel('<center>Send this invitation code to your partner:'))
-        serverlayout.addWidget(QLabel('%s' % battleshipslib.ip))
+        serverlayout = QVBoxLayout()
+        serverlayout.addWidget(QLabel('<center><h4>If you require a connection code'))
+        serverlayout.addWidget(QLabel('<center>Your connection code is:\n\n'))
+        serverlayout.addWidget(QLineEdit('%s' % encode(battleshipslib.ip)))
         
         seperator = QFrame()
         seperator.setFrameShape(QFrame.VLine)
         
-        mainsplitter = QVBoxLayout()
+        mainsplitter = QHBoxLayout()
         mainsplitter.addLayout(clientlayout)
         mainsplitter.addWidget(seperator)
         mainsplitter.addLayout(serverlayout)
         
         layout = QVBoxLayout()
         layout.addLayout(mainsplitter)
-        buttonbox = QDialogButtonBox(QDialogButtonBox.Ok)
+        buttonbox = QDialogButtonBox(QDialogButtonBox.Ok|QDialogButtonBox.Cancel)
         layout.addWidget(buttonbox)
         self.setLayout(layout)
         self.connect(buttonbox, SIGNAL('accepted ()'),
                      self.accept)
+        self.connect(buttonbox, SIGNAL('rejected ()'),
+                     self.reject)
 
 class ReciveThread(QThread):
     
@@ -109,7 +118,15 @@ class ReciveThread(QThread):
         self.over.emit()
         
         self.connect(self.parent.Input, SIGNAL("editingFinished ()"),
-                                        self.parent.sendShot)
+                                        self.parent.sendShot)  
+
+class ServerThread(QThread):
+    over = pyqtSignal()
+    
+    def run(self):
+        self.parent.game.connection.setServer()
+        
+        self.over.emit()
         
 
 class GameWindow(QMainWindow):
@@ -118,7 +135,7 @@ class GameWindow(QMainWindow):
         
         #GAME
         self.game = battleshipslib.board()
-        self.game.ships = [5,4,3,2,2]
+        self.game.ships = [2]
         
         self.VALUES = []
         self.SHOTS = []
@@ -145,18 +162,15 @@ class GameWindow(QMainWindow):
         
         self.setWindowTitle('Battleships')
         
-        #Set connection type and ip and so forth
-        dialog = ConnectionWindow(self)
-        if dialog.exec_():
-            if unicode(dialog.Input.text()) == '':
-                log('Server')
-                self.game.connection.setServer()
-            else:
-                log('Client')
-                self.game.connection.setClient(unicode(dialog.Input.text()))
+        
+        menu = self.menuBar()
+        file = menu.addMenu('&File')
+        
+        connect = self.createAction('Connect', shortcut='Ctrl+N', slot=self.createConnection, icon=QIcon(':/CONNECT.png'))
+        file.addAction(connect)
         
         content = ['Place ships please. Lengths are: 5, 4, 3, 2, 2',
-                   '\n\nEnter coordinates in the form A1,B3, with A1 being the start of the ship, and B3 being the end',
+                   '\n\nEnter coordinates in the form \'A1,B3\', with A1 being the start of the ship, and B3 being the end',
                    '\n\n']
         
         
@@ -164,7 +178,35 @@ class GameWindow(QMainWindow):
         
         self.connect(self.Input, SIGNAL("editingFinished ()"),
                                         self.placeShip)
-    
+    def createConnection(self):
+        dialog = ConnectionDialog()
+        if dialog.exec_():
+            self.connecting = QMessageBox.information(self, 'Connecting', 'Connecting...')
+            text = decode(dialog.Input.text())
+            if len(text.split('.')) == 3:
+                self.game.connection.setClient(text)
+                self.finishedConnecting()
+            elif text == '':
+                self.thread = ServerThread()
+                self.thread.parent = self
+                self.thread.over.connect(self.finishedConnecting)
+                self.thread.run()
+            else:
+                self.connecting.close()
+                QMessageBox.critical(self, 'End', 'Invalid invitation code')
+        
+
+        
+    def finishedConnecting(self):
+        self.connecting.close()
+        if self.game.ships == []:
+            if self.game.connection.type == "Server":
+                self.connect(self.Input, SIGNAL("editingFinished ()"),
+                                self.sendShot)
+            else:
+                self.reciveShot()
+                self.syncLists()
+        
     
     def placeShip(self):
         input = self.Input.text().split(',')
@@ -191,6 +233,13 @@ class GameWindow(QMainWindow):
             return
         self.Input.setText('')
         self.syncLists()
+        try:
+            self.game.connection.type
+        except AttributeError:
+            self.Output.append('\nShips placed, please now connect to your opponent')
+            return
+        
+        
         if self.game.connection.type == "Server":
             self.connect(self.Input, SIGNAL("editingFinished ()"),
                                     self.sendShot)
@@ -206,6 +255,8 @@ class GameWindow(QMainWindow):
         self.thread.over.connect(self.syncLists)
     
     def sendShot(self):
+        self.Output.append('\nEnter the coordinates for us to target')
+        
         coord = self.Input.text()
         if len(coord) != 2:
             return
@@ -229,13 +280,13 @@ class GameWindow(QMainWindow):
         
     def WonGame(self):
         dialog = QMessageBox('You won the game. Well done')
-        if dialog.exec_():
-            self.close()
+        dialog.exec_()
+        self.close()
     
     def LostGame(self):
         dialog = QMessageBox('You lost the game. Better luck next time')
-        if dialog.exec_():
-            self.close()
+        dialog.exec_()
+        self.close()
     
     def createsetLayout(self):
         Layout = QGridLayout()
@@ -245,7 +296,6 @@ class GameWindow(QMainWindow):
         Widget = QWidget()
         Widget.setLayout(Layout)
         self.setCentralWidget(Widget)
-        
         
     def syncLists(self):
         for row in range(0, len(self.game.values)):
