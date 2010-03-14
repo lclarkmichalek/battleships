@@ -1,21 +1,12 @@
-SHELL = /bin/sh
+SHELL=/bin/sh
 
-PREFIX = /usr/local
-DATADIR = $(PREFIX)/share/Battleships
-GRAPHICSDIR = $(DATADIR)/Graphics
-BINDIR = $(PREFIX)/bin
-
-
-all: graphics
-	install	
-
-
-graphics:
-	sed -i "s/Graphics/$(GRAPHICSDIR)" ./images.qrc
-	pyrcc4 ./images.qrc -o ./images.py
+PREFIX=/usr/local
+PYTHONVERSION=2.6
+PYTHONLIBDIR=$(PREFIX)/lib/python$(PYTHONVERSION)
+BINDDIR=$(PREFIX)/bin
+CXARGS="-c -O --no-copy-deps"
 
 install:
-	mkdir -p $(GRAPHICSDIR)
-	cp Graphics/* $(GRAPHICSDIR)
-	install 755 -D ./battleships.pyw $(BINDIR)/battleships.X11
-	install 755 -D ./battleships.py $(BINDIR)/battleships
+	install -D 644 ./battleshipslib.py $(PYTHONLIBDIR)/battleshipslib.py
+	cxfreeze ./xbattleships.py $(CXARGS) --target-dir $(BINDIR)
+	cxfreeze ./battleships.py $(CXARGS) --target-dir $(BINDIR)

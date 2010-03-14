@@ -1,4 +1,10 @@
+#File types
 *.e4p
 *.pyc
 
+#Generated Files
 images.py
+graphics.qrc
+
+#Folders
+pkg
