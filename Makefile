@@ -8,6 +8,6 @@ CXARGS=-c -O --no-copy-deps
 
 install:
 	mkdir -p $(PYTHONLIBDIR) $(BINDIR)
-	cp ./battleshipslib.py $(PYTHONLIBDIR)
-	cxfreeze ./xbattleships.py $(CXARGS) --target-dir $(BINDIR)
-	cxfreeze ./battleships.py $(CXARGS) --target-dir $(BINDIR)
+	cp ./src/battleshipslib.py $(PYTHONLIBDIR)
+	cxfreeze ./src/xbattleships.py $(CXARGS) --target-dir $(BINDIR)
+	cxfreeze ./src/battleships.py $(CXARGS) --target-dir $(BINDIR)
