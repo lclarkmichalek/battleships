@@ -1,6 +1,9 @@
 Battleships is a simple multiplayer battleships game. It features a pyqt gui
 and a text mode client too. Both can interact.
 
+The author is Laurie Clark-Michalek and it is licenced under the Gnu Public
+Licence version 3
+
 TO INSTALL:
 On archlinux:
 makepkg -i
