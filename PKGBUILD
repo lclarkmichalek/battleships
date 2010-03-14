@@ -1,6 +1,6 @@
 pkgname=battleships
 pkgver=0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="A simple multiplayer server/client battleships game"
 arch=('any')
 url="http://www.github.com/bluepeppers/battleships"
@@ -10,6 +10,7 @@ depends=('python' 'pyqt')
 makedepends=('cx_freeze')
 source=("http://github.com/downloads/bluepeppers/$pkgname/$pkgname-$pkgver.tar.gz")
 md5sums=("cd570609c5b1ea32c4efdd0b25e8e70b")
+options=(!strip)
 
 build() {
 	cd $srcdir/$pkgname-$pkgver
