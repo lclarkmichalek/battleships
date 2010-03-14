@@ -3,8 +3,9 @@
 *.pyc
 
 #Generated Files
-images.py
-graphics.qrc
+*/images.py
+*/graphics.qrc
 
 #Folders
-pkg
+dist/*
+src/.*
