@@ -10,10 +10,11 @@ DESTDIR=./dest
 install:
 	mkdir -p $(PYTHONLIBDIR) $(BINDIR)
 	install -m 644 $(DESTDIR)$(PYTHONLIBDIR)/battleshipslib.py $(PYTHONLIBDIR)
-	install -m 755 $(DESTDIR)$(BINDIR)/xbattleships.py $(BINDIR)
-	install -m 755 $(DESTDIR)$(BINDIR)/battleships.py $(BINDIR)
+	install -m 755 $(DESTDIR)$(BINDIR)/xbattleships $(BINDIR)
+	install -m 755 $(DESTDIR)$(BINDIR)/battleships $(BINDIR)
 
 make:
+	pyrcc4 ./src/images.qrc -o ./src/images.py
 	mkdir -p $(DESTDIR)$(PYTHONLIBDIR) $(DESTDIR)$(BINDIR)
 	install -m 644 ./src/battleshipslib.py $(DESTDIR)$(PYTHONLIBDIR)
 	cxfreeze ./src/xbattleships.py $(CXARGS) --target-dir $(DESTDIR)$(BINDIR)
