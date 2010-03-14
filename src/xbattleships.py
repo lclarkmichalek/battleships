@@ -18,7 +18,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from time import sleep
 import battleshipslib
-import images
+import battleshipsimages
 import sys
 
 log = battleshipslib.log
