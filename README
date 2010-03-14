@@ -1,0 +1,10 @@
+Battleships is a simple multiplayer battleships game. It features a pyqt gui
+and a text mode client too. Both can interact.
+
+TO INSTALL:
+On archlinux:
+makepkg -i
+
+On anything else:
+make make -e PREFIX=/usr
+make install -e PREFIX=/usr 
