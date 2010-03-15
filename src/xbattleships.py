@@ -18,7 +18,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from time import sleep
 import battleshipslib
-import battleshipsimages
+import images
 import sys
 
 log = battleshipslib.log
@@ -152,11 +152,12 @@ class GameWindow(QMainWindow):
         self.Output = QTextBrowser()
         Font = QFont()
         Font.setStyleHint(QFont.TypeWriter)
-        #Font.setCapitalization(QFont.AllUppercase)
         Font.setFamily('Monospace')
         self.Output.setCurrentFont(Font)
         self.Output.setText('Welcome to BattLeships')
         self.Input = QLineEdit()
+        
+        self.statusBar().setSizeGripEnabled(False)
         
         self.createsetLayout()
         
@@ -166,8 +167,11 @@ class GameWindow(QMainWindow):
         menu = self.menuBar()
         file = menu.addMenu('&File')
         
-        connect = self.createAction('Connect', shortcut='Ctrl+N', slot=self.createConnection, icon=QIcon(':/CONNECT.png'))
+        connect = self.createAction('Connect', shortcut='Ctrl+N', slot=self.createConnection, icon='CONNECT')
         file.addAction(connect)
+        
+        quit = self.createAction('Quit',shortcut='Ctrl+Q', slot=self.close)
+        file.addAction(quit)
         
         content = ['Place ships please. Lengths are: 5, 4, 3, 2, 2',
                    '\n\nEnter coordinates in the form \'A1,B3\', with A1 being the start of the ship, and B3 being the end',
@@ -181,24 +185,29 @@ class GameWindow(QMainWindow):
     def createConnection(self):
         dialog = ConnectionDialog()
         if dialog.exec_():
-            self.connecting = QMessageBox.information(self, 'Connecting', 'Connecting...')
             text = decode(dialog.Input.text())
-            if len(text.split('.')) == 3:
-                self.game.connection.setClient(text)
-                self.finishedConnecting()
+            if len(text.split('.')) == 4:
+                try:
+                    self.game.connection.setClient(text)
+                except Exception:
+                    QMessageBox.critical(self, 'Error', 'Could not connect to the other player')
+                else:
+                    self.finishedConnecting()
             elif text == '':
+                #TODO: Fix this
+                self.statusBar().showMessage('Waiting for other player to connect')
+                
                 self.thread = ServerThread()
                 self.thread.parent = self
                 self.thread.over.connect(self.finishedConnecting)
                 self.thread.run()
             else:
-                self.connecting.close()
-                QMessageBox.critical(self, 'End', 'Invalid invitation code')
+                QMessageBox.critical(self, 'Error', 'Invalid connection code')
         
 
         
     def finishedConnecting(self):
-        self.connecting.close()
+        self.statusBar().showMessage('Connected', 5000)
         if self.game.ships == []:
             if self.game.connection.type == "Server":
                 self.connect(self.Input, SIGNAL("editingFinished ()"),
@@ -279,13 +288,11 @@ class GameWindow(QMainWindow):
         self.syncLists()
         
     def WonGame(self):
-        dialog = QMessageBox('You won the game. Well done')
-        dialog.exec_()
+        QMessageBox(self, 'Won', 'You won the game. Well done')
         self.close()
     
     def LostGame(self):
-        dialog = QMessageBox('You lost the game. Better luck next time')
-        dialog.exec_()
+        QMessageBox(self, 'Lost', 'You lost the game. Better luck next time')
         self.close()
     
     def createsetLayout(self):
