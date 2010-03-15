@@ -222,7 +222,9 @@ class GameWindow(QMainWindow):
     def placeShip(self):
         input = self.Input.text().split(',')
         self.Input.setText('')
-        if len(input) != 2:
+        if not str(input[0][0]).isalpha() and not str(input[0][1:]).isnumeric():
+            return
+        if not str(input[1][0]).isalpha() and not str(input[1][1:]).isnumeric():
             return
         start = input[0]
         start = (int(start[1:])-1,'ABCDEFGHIJKL'.index(unicode(start[0]).capitalize()))
