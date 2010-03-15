@@ -34,12 +34,22 @@ MISS = QPixmap(':/MISS.png').scaled(size,size)
 SHIP = QPixmap(':/SHIP.png').scaled(size,size)
 
 def encode(input):
-    output = input
-    return output
+    output = []
+    for char in input:
+        if char == '.':
+            output.append('l')
+        else:
+            output.append('abcdefghijk'[int(char)])
+    return ''.join(output)
 
 def decode(input):
-    output = input
-    return output
+    output = []
+    for char in input:
+        if char == 'l':
+            output.append('.')
+        else:
+            output.append('0123456789'['abcdefghijk'.index(char)])
+    return ''.join(output)
 
 class square(QLabel):
     def __init__(self, row, column, parent=None, value="EMPTY"):
