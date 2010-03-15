@@ -117,6 +117,7 @@ class ReciveThread(QThread):
         
         self.over.emit()
         
+        self.parent.presendShot()
         self.connect(self.parent.Input, SIGNAL("editingFinished ()"),
                                         self.parent.sendShot)  
 
@@ -195,7 +196,7 @@ class GameWindow(QMainWindow):
                     self.finishedConnecting()
             elif text == '':
                 #TODO: Fix this
-                self.statusBar().showMessage('Waiting for other player to connect')
+                self.statusBar().showMessage('Waiting for other player to connect',15000)
                 
                 self.thread = ServerThread()
                 self.thread.parent = self
@@ -210,6 +211,7 @@ class GameWindow(QMainWindow):
         self.statusBar().showMessage('Connected', 5000)
         if self.game.ships == []:
             if self.game.connection.type == "Server":
+                self.presendShot()
                 self.connect(self.Input, SIGNAL("editingFinished ()"),
                                 self.sendShot)
             else:
@@ -250,6 +252,7 @@ class GameWindow(QMainWindow):
         
         
         if self.game.connection.type == "Server":
+            self.presendShot()
             self.connect(self.Input, SIGNAL("editingFinished ()"),
                                     self.sendShot)
         else:
@@ -263,8 +266,10 @@ class GameWindow(QMainWindow):
         self.thread.start()
         self.thread.over.connect(self.syncLists)
     
-    def sendShot(self):
+    def presendShot(self):
         self.Output.append('\nEnter the coordinates for us to target')
+    
+    def sendShot(self):
         
         coord = self.Input.text()
         if len(coord) != 2:
@@ -288,11 +293,13 @@ class GameWindow(QMainWindow):
         self.syncLists()
         
     def WonGame(self):
-        QMessageBox(self, 'Won', 'You won the game. Well done')
+        #TODO: Make sparkly
+        QMessageBox.information(self, 'Won', 'You won the game. Well done')
         self.close()
     
     def LostGame(self):
-        QMessageBox(self, 'Lost', 'You lost the game. Better luck next time')
+        #TODO: Make sparkly
+        QMessageBox.information(self, 'Lost', 'You lost the game. Better luck next time')
         self.close()
     
     def createsetLayout(self):
