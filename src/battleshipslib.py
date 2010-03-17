@@ -38,6 +38,10 @@ def log(*args):
         sys.stderr.write(str(arg))
     sys.stderr.write('\n')
 
+class NetworkError(Exception): pass
+
+class Shutdown(Exception): pass
+
 class board():
     def __init__(self):
         
@@ -126,7 +130,6 @@ class board():
         
         recived = self.connection.recive()
         
-        log('Recived: '+recived)
         
         if recived[:10] == '<coordrtn>':
             result = recived[10:]
@@ -153,10 +156,15 @@ class board():
         self.game = 'LOST'
         return True
     
+    def close(self):
+        self.connection.close()
+    
 
 class connection():
-    def __init__(self):
+    def __init__(self, timeout = 5):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.timeout = timeout
+        self.moving = 0
     
     def setServer(self):
         self.type = 'Server'
@@ -171,11 +179,16 @@ class connection():
         self.socket = self.sock
         self.socket.setblocking(0)
     
-    def check(self, timeout = 60):
-        readable, writeable, errorable = select.select([self.socket],
-                                                       [self.socket], 
-                                                       [self.socket], 
-                                                       timeout)
+    def check(self, timeout = 0):
+        readable, null, null = select.select([self.socket], [], [], timeout)
+        null, writeable, null = select.select([], [self.socket], [], timeout)
+        null, null, errorable = select.select([], [], [self.socket], timeout)
+        del null
+        
+        if bool(errorable): raise NetworkError
+        
+        log (bool(readable), bool(writeable), bool(errorable))
+        
         return (bool(readable), bool(writeable), bool(errorable))
     
     def send(self, content):
@@ -191,35 +204,49 @@ class connection():
         else:
             length = str(length)
         self.socket.send(str(length) + content)
-        log('Sent: '+length + content)
     
     def recive(self):
         if self.check()[2]:
             self.socket.close()
             raise RuntimeError
+        if self.check()[0]:
+            self.moving += 1
+            log(self.moving)
+            if self.moving >= self.timeout:
+                raise Shutdown
+        else:
+            self.moving = 0
         while not self.check()[0]:
             time.sleep(0.1)
             if self.check()[2]:
                 self.socket.close()
                 raise RuntimeError
         length = self.socket.recv(2)
-        length = int(length)
+        try:
+            length = int(length)
+        except ValueError:
+            log(length)
+            raise Shutdown
         content = self.socket.recv(length)
-        log('Recived: ' + str(length) + content)
         return content
     
     def reciveone(self):
         if self.check()[2]:
             self.socket.close()
             raise RuntimeError
-        elif not self.check()[0]:
+        if self.check()[0]:
+            self.moving += 1
+            log(self.moving)
+            if self.moving >= self.timeout:
+                raise Shutdown
+        else:
+            self.moving = 0
             return False
         length = self.socket.recv(2)
         if length == '':
             return False
         length = int(length)
         content = self.socket.recv(length)
-        log('Recived: ' + str(length) + content)
         return content
     
     def close(self):

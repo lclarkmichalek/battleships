@@ -33,6 +33,8 @@ HIT = QPixmap(':/HIT.png').scaled(size,size)
 MISS = QPixmap(':/MISS.png').scaled(size,size)
 SHIP = QPixmap(':/SHIP.png').scaled(size,size)
 
+
+
 def encode(input):
     output = []
     for char in input:
@@ -120,10 +122,29 @@ class ReciveThread(QThread):
     
     def run(self):
         self.parent.Output.append('\n\nWaiting for a shot.')
-        shot = self.shot(self.parent)
+        try:
+            shot = self.shot(self.parent)
+        except battleshipslib.NetworkError:
+            log ('Network Raised')
+            self.parent.NetworkErrorHandle.emit()
+            return
+        except battleshipslib.Shutdown:
+            log ('Shutdown Raised')
+            self.parent.ShutdownHandle.emit()
+            return
+            
         while shot == None:
             sleep(0.2)
-            shot = self.shot(self.parent)
+            try:
+                shot = self.shot(self.parent)
+            except battleshipslib.NetworkError:
+                log ('Network Error')
+                self.parent.NetworkErrorHandle.emit()
+                return
+            except battleshipslib.Shutdown:
+                log ('Shutdown')
+                self.parent.ShutdownHandle.emit()
+                return
         
         self.over.emit()
         
@@ -141,6 +162,9 @@ class ServerThread(QThread):
         
 
 class GameWindow(QMainWindow):
+    NetworkErrorHandle = pyqtSignal()
+    ShutdownHandle = pyqtSignal()
+    
     def __init__(self, parent=None):
         super(GameWindow, self).__init__(parent)
         
@@ -193,6 +217,10 @@ class GameWindow(QMainWindow):
         
         self.connect(self.Input, SIGNAL("editingFinished ()"),
                                         self.placeShip)
+        
+        self.NetworkErrorHandle.connect(self.NetworkError)
+        self.ShutdownHandle.connect(self.Shutdown)
+    
     def createConnection(self):
         dialog = ConnectionDialog()
         if dialog.exec_():
@@ -215,8 +243,6 @@ class GameWindow(QMainWindow):
             else:
                 QMessageBox.critical(self, 'Error', 'Invalid connection code')
         
-
-        
     def finishedConnecting(self):
         self.statusBar().showMessage('Connected', 5000)
         if self.game.ships == []:
@@ -228,7 +254,6 @@ class GameWindow(QMainWindow):
                 self.reciveShot()
                 self.syncLists()
         
-    
     def placeShip(self):
         input = self.Input.text().split(',')
         self.Input.setText('')
@@ -284,11 +309,15 @@ class GameWindow(QMainWindow):
     def sendShot(self):
         
         coord = self.Input.text()
+        self.Input.setText('')
+        
         if len(coord) != 2:
             return
+        coord = (int(coord[1])-1,'ABCDEFGHIJKL'.index(coord[0]))
+        
         self.disconnect(self.Input, SIGNAL("editingFinished ()"),
                                 self.sendShot)
-        coord = (int(coord[1])-1,'ABCDEFGHIJKL'.index(coord[0]))
+        
         returncode = self.game.sendShot(coord)
         if returncode:
             self.Output.append('\n\nYou hit the enemy.')
@@ -299,20 +328,32 @@ class GameWindow(QMainWindow):
         else:
             self.Output.append('\n\nYou missed the enemy.' )
         
-        self.Input.setText('')
         
         self.reciveShot()
         self.syncLists()
+    
+    def close(self):
+        self.game.close()
         
     def WonGame(self):
         #TODO: Make sparkly
         QMessageBox.information(self, 'Won', 'You won the game. Well done')
-        self.close()
+        app.quit()
     
     def LostGame(self):
         #TODO: Make sparkly
         QMessageBox.information(self, 'Lost', 'You lost the game. Better luck next time')
-        self.close()
+        app.quit()
+    
+    def NetworkError(self):
+        log ('Entered NetworkError()')
+        QMessageBox.critical(self, 'Error', 'There appears to be a network error. This could mean that you have lost your internet connection. Battleships will now quit.')
+        app.quit()
+    
+    def Shutdown(self):
+        log ('Entered Shutdown()')
+        QMessageBox.critical(self, 'Disconection', 'Your partner seems to have disconnected. Battleships cannot continue, and will now quit.')
+        app.quit()
     
     def createsetLayout(self):
         Layout = QGridLayout()
