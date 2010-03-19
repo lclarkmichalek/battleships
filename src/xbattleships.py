@@ -122,19 +122,9 @@ class ReciveThread(QThread):
     
     def run(self):
         self.parent.Output.append('\n\nWaiting for a shot.')
-        try:
-            shot = self.shot(self.parent)
-        except battleshipslib.NetworkError:
-            log ('Network Raised')
-            self.parent.NetworkErrorHandle.emit()
-            return
-        except battleshipslib.Shutdown:
-            log ('Shutdown Raised')
-            self.parent.ShutdownHandle.emit()
-            return
-            
+        
+        shot = None
         while shot == None:
-            sleep(0.2)
             try:
                 shot = self.shot(self.parent)
             except battleshipslib.NetworkError:
@@ -145,6 +135,7 @@ class ReciveThread(QThread):
                 log ('Shutdown')
                 self.parent.ShutdownHandle.emit()
                 return
+            sleep(0.2)
         
         self.over.emit()
         
@@ -159,7 +150,7 @@ class ServerThread(QThread):
         self.parent.game.connection.setServer()
         
         self.over.emit()
-        
+
 
 class GameWindow(QMainWindow):
     NetworkErrorHandle = pyqtSignal()
