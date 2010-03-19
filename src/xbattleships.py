@@ -151,6 +151,8 @@ class ServerThread(QThread):
         
         self.over.emit()
 
+class CheckThread(QThread): pass
+
 
 class GameWindow(QMainWindow):
     NetworkErrorHandle = pyqtSignal()
