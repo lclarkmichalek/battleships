@@ -31,7 +31,7 @@ ip = s.getsockname()[0]
 del s
 
 global port
-port = 1768
+port = 1769
 
 def log(*args):
     for arg in args:
@@ -186,8 +186,6 @@ class connection():
         del null
         
         if bool(errorable): raise NetworkError
-        
-        log (bool(readable), bool(writeable), bool(errorable))
         
         return (bool(readable), bool(writeable), bool(errorable))
     

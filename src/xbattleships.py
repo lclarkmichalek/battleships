@@ -151,7 +151,23 @@ class ServerThread(QThread):
         
         self.over.emit()
 
-class CheckThread(QThread): pass
+class CheckThread(QThread):
+    shutdown = pyqtSignal()
+    def run(self):
+        self.moving = 0
+        while 1:
+            status = self.parent.game.connection.check()
+            log (status)
+            if status[0]:
+                self.moving += 1
+                log (self.moving)
+                if self.moving >= self.parent.game.connection.timeout:
+                    self.shutdown.emit()
+                    return
+            else:
+                self.moving = 0
+            sleep(0.2)
+                    
 
 
 class GameWindow(QMainWindow):
@@ -298,6 +314,12 @@ class GameWindow(QMainWindow):
     
     def presendShot(self):
         self.Output.append('\nEnter the coordinates for us to target')
+        
+        self.checkthread = CheckThread()
+        self.checkthread.parent = self
+        self.checkthread.start()
+        self.checkthread.shutdown.connect(self.Shutdown)
+        self.checkthread.shutdown.connect(self.checkthread.quit)
     
     def sendShot(self):
         
@@ -307,6 +329,8 @@ class GameWindow(QMainWindow):
         if len(coord) != 2:
             return
         coord = (int(coord[1])-1,'ABCDEFGHIJKL'.index(coord[0]))
+        
+        self.checkthread.quit()
         
         self.disconnect(self.Input, SIGNAL("editingFinished ()"),
                                 self.sendShot)
