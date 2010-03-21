@@ -170,10 +170,8 @@ class CheckThread(QThread):
         self.moving = 0
         while 1:
             status = self.parent.game.connection.check()
-            log (status)
             if status[0]:
                 self.moving += 1
-                log (self.moving)
                 if self.moving >= self.parent.game.connection.timeout:
                     self.shutdown.emit()
                     return
@@ -255,6 +253,7 @@ class GameWindow(QMainWindow):
                 else:
                     self.finishedConnecting()
             elif text == '':
+                #TODO: still not fixed. Think about QThread.msleep?
                 self.statusBar().showMessage('Waiting for other player to connect',15000)
                 
                 self.thread = ServerThread()
@@ -338,14 +337,16 @@ class GameWindow(QMainWindow):
         coord = self.Input.text()
         self.Input.setText('')
         
-        if not len(coord) in [2,3]:
-            try:
-                if int(coord[1:]) > len(self.VALUES):
-                    raise ValueError
-                coord = (int(coord[1:])-1,'ABCDEFGHIJKL'.index(coord[0]))
-            except ValueError:
-                self.Output.append('\nInvalid coordinates')
-                return
+        if coord == '':
+            return
+        try:
+            if int(coord[1:]) > len(self.VALUES):
+                raise ValueError
+            coord = (int(coord[1:])-1,'ABCDEFGHIJKL'.index(coord[0]))
+            log (coord)
+        except ValueError:
+            self.Output.append('\nInvalid coordinates')
+            return
         
         self.checkthread.quit()
         

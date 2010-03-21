@@ -201,6 +201,7 @@ class connection():
             length = '0' + str(length)
         else:
             length = str(length)
+        log(content)
         self.socket.send(str(length) + content)
     
     def recive(self):
@@ -223,9 +224,9 @@ class connection():
         try:
             length = int(length)
         except ValueError:
-            log(length)
             raise Shutdown
         content = self.socket.recv(length)
+        log (content)
         return content
     
     def reciveone(self):
@@ -245,6 +246,7 @@ class connection():
             return False
         length = int(length)
         content = self.socket.recv(length)
+        log (content)
         return content
     
     def close(self):
