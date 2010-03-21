@@ -147,7 +147,20 @@ class ServerThread(QThread):
     over = pyqtSignal()
     
     def run(self):
-        self.parent.game.connection.setServer()
+        connection = self.parent.game.connection
+        connection.type = 'Server'
+        connection.sock.bind((battleshipslib.ip, battleshipslib.port))
+        connection.sock.listen(1)
+        connection.socket = connection.sock
+        
+        while not connection.check()[0]:
+            sleep(0.2)
+        
+        del connection.socket
+        
+        (connection.socket, connection.address) = connection.sock.accept()
+        
+        connection.socket.setblocking(0)
         
         self.over.emit()
 
@@ -242,7 +255,6 @@ class GameWindow(QMainWindow):
                 else:
                     self.finishedConnecting()
             elif text == '':
-                #TODO: Fix this
                 self.statusBar().showMessage('Waiting for other player to connect',15000)
                 
                 self.thread = ServerThread()
