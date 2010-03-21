@@ -135,7 +135,7 @@ class ReciveThread(QThread):
                 log ('Shutdown')
                 self.parent.ShutdownHandle.emit()
                 return
-            sleep(0.2)
+            self.msleep(200)
         
         self.over.emit()
         
@@ -154,7 +154,7 @@ class ServerThread(QThread):
         connection.socket = connection.sock
         
         while not connection.check()[0]:
-            sleep(0.2)
+            self.msleep(200)
         
         del connection.socket
         
@@ -177,7 +177,7 @@ class CheckThread(QThread):
                     return
             else:
                 self.moving = 0
-            sleep(0.2)
+            self.msleep(200)
                     
 
 
@@ -253,7 +253,7 @@ class GameWindow(QMainWindow):
                 else:
                     self.finishedConnecting()
             elif text == '':
-                #TODO: still not fixed. Think about QThread.msleep?
+                #TODO: still not fixed. QThread.msleep dosn't seem to work. Maybe re-think threading all together
                 self.statusBar().showMessage('Waiting for other player to connect',15000)
                 
                 self.thread = ServerThread()
