@@ -326,9 +326,14 @@ class GameWindow(QMainWindow):
         coord = self.Input.text()
         self.Input.setText('')
         
-        if len(coord) != 2:
-            return
-        coord = (int(coord[1])-1,'ABCDEFGHIJKL'.index(coord[0]))
+        if not len(coord) in [2,3]:
+            try:
+                if int(coord[1:]) > len(self.VALUES):
+                    raise ValueError
+                coord = (int(coord[1:])-1,'ABCDEFGHIJKL'.index(coord[0]))
+            except ValueError:
+                self.Output.append('\nInvalid coordinates')
+                return
         
         self.checkthread.quit()
         
