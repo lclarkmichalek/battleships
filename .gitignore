@@ -4,7 +4,8 @@
 .*
 
 #Generated Files
-*/images.py
+*/battleshipsimages.py
+*/image.py
 */graphics.qrc
 
 #Folders
