@@ -22,8 +22,8 @@ import images
 import sys
 
 log = battleshipslib.log
-
-
+IP = battleshipslib.ip
+PORT = battleshipslib.port
 
 app = QApplication(sys.argv)
 app.setWindowIcon(QIcon(':/LOGO.png'))
@@ -83,7 +83,7 @@ class ConnectionDialog(QDialog):
         serverlayout = QVBoxLayout()
         serverlayout.addWidget(QLabel('<center><h4>If you require a connection code'))
         serverlayout.addWidget(QLabel('<center>Your connection code is:\n\n'))
-        serverlayout.addWidget(QLineEdit('%s' % encode(battleshipslib.ip)))
+        serverlayout.addWidget(QLineEdit('%s' % encode(IP)))
         
         seperator = QFrame()
         seperator.setFrameShape(QFrame.VLine)
