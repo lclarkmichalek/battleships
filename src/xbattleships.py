@@ -135,34 +135,13 @@ class ReciveThread(QThread):
                 log ('Shutdown')
                 self.parent.ShutdownHandle.emit()
                 return
-            self.msleep(200)
+            self.usleep(200)
         
         self.over.emit()
         
         self.parent.presendShot()
         self.connect(self.parent.Input, SIGNAL("editingFinished ()"),
                                         self.parent.sendShot)  
-
-class ServerThread(QThread):
-    over = pyqtSignal()
-    
-    def run(self):
-        connection = self.parent.game.connection
-        connection.type = 'Server'
-        connection.sock.bind((battleshipslib.ip, battleshipslib.port))
-        connection.sock.listen(1)
-        connection.socket = connection.sock
-        
-        while not connection.check()[0]:
-            self.msleep(200)
-        
-        del connection.socket
-        
-        (connection.socket, connection.address) = connection.sock.accept()
-        
-        connection.socket.setblocking(0)
-        
-        self.over.emit()
 
 class CheckThread(QThread):
     shutdown = pyqtSignal()
@@ -177,7 +156,7 @@ class CheckThread(QThread):
                     return
             else:
                 self.moving = 0
-            self.msleep(200)
+            self.usleep(200)
                     
 
 
@@ -253,13 +232,11 @@ class GameWindow(QMainWindow):
                 else:
                     self.finishedConnecting()
             elif text == '':
-                #TODO: still not fixed. QThread.msleep dosn't seem to work. Maybe re-think threading all together
+                #Because the socket.accept() call blocks, this message will never be shown.
+                #I don't think it is possible to fix this atm. Timeout on accept() maybe?
                 self.statusBar().showMessage('Waiting for other player to connect',15000)
                 
-                self.thread = ServerThread()
-                self.thread.parent = self
-                self.thread.over.connect(self.finishedConnecting)
-                self.thread.run()
+                self.game.connection.setServer()
             else:
                 QMessageBox.critical(self, 'Error', 'Invalid connection code')
         
