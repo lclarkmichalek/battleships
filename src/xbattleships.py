@@ -1,4 +1,4 @@
-#!/bin/python
+#!/bin/env python
 # -*- coding: utf-8 -*-
 #    Copyright 2010 Laurie Clark-Michalek (Blue Peppers) <bluepeppers@archlinux.us>
 #    This program is free software: you can redistribute it and/or modify
@@ -135,7 +135,7 @@ class ReciveThread(QThread):
                 log ('Shutdown')
                 self.parent.ShutdownHandle.emit()
                 return
-            self.usleep(200)
+            self.msleep(200)
         
         self.over.emit()
         
@@ -156,7 +156,7 @@ class CheckThread(QThread):
                     return
             else:
                 self.moving = 0
-            self.usleep(200)
+            self.msleep(200)
                     
 
 
