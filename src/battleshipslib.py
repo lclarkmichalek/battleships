@@ -157,7 +157,8 @@ class board():
         return True
     
     def close(self):
-        self.connection.close()
+        if self.connection.__dict__.has_key('socket'):
+            self.connection.close()
     
 
 class connection():
