@@ -27,7 +27,7 @@ PORT = battleshipslib.port
 
 app = QApplication(sys.argv)
 app.setWindowIcon(QIcon(':/LOGO.png'))
-size = 30
+size = 50
 EMPTY = QPixmap(':/EMPTY.png').scaled(size,size)
 HIT = QPixmap(':/HIT.png').scaled(size,size)
 MISS = QPixmap(':/MISS.png').scaled(size,size)
@@ -375,9 +375,9 @@ class GameWindow(QMainWindow):
     
     def createsetLayout(self):
         Layout = QGridLayout()
-        Layout.addLayout(self.createBoard(),0,0,2,1)
-        Layout.addWidget(self.Output,0,1)
-        Layout.addWidget(self.Input,1,1)
+        Layout.addLayout(self.createBoard(),0,0)
+        Layout.addWidget(self.Output,1,0)
+        Layout.addWidget(self.Input,2,0)
         Widget = QWidget()
         Widget.setLayout(Layout)
         self.setCentralWidget(Widget)
@@ -455,7 +455,7 @@ class GameWindow(QMainWindow):
         ValuesFrame.setLayout(ValuesLayout)
         
         FullLayout.addWidget(ShotsFrame, 0, 0)
-        FullLayout.addWidget(ValuesFrame, 1, 0)
+        FullLayout.addWidget(ValuesFrame, 0, 1)
         
         
         return FullLayout
