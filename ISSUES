@@ -1,0 +1,2 @@
+xbattleships.py:
+synclists is not syncing shot ships propery since the pretty ships update. This regression is annoying, as it is key functionality
