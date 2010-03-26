@@ -6,6 +6,9 @@
 <file alias="SHIP.png">Graphics/SHIP.png</file>
 <file alias="EMPTY.png">Graphics/EMPTY.png</file>
 <file alias="LOGO.png">Graphics/LOGO.png</file>
-<file alias="CONNECT.png">Graphics/CONNECT.png</file>
+<file alias="HORIFRONT.png">Graphics/HORIFRONT.png</file>
+<file alias="HORIBACK.png">Graphics/HORIBACK.png</file>
+<file alias="VERTFRONT.png">Graphics/VERTFRONT.png</file>
+<file alias="VERTBACK.png">Graphics/VERTBACK.png</file>
 </qresource>
 </RCC>

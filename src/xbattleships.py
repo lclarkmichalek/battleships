@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #    Copyright 2010 Laurie Clark-Michalek (Blue Peppers) <bluepeppers@archlinux.us>
 #    This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,10 @@ HIT = QPixmap(':/HIT.png').scaled(size,size)
 MISS = QPixmap(':/MISS.png').scaled(size,size)
 SHIP = QPixmap(':/SHIP.png').scaled(size,size)
 
-
+VERTFRONT = QPixmap(':/VERTFRONT.png').scaled(size,size)
+VERTBACK = QPixmap(':/VERTBACK.png').scaled(size,size)
+HORIBACK = QPixmap(':/HORIBACK.png').scaled(size,size)
+HORIFRONT = QPixmap(':/HORIFRONT.png').scaled(size,size)
 
 def encode(input):
     output = []
@@ -66,7 +69,10 @@ class square(QLabel):
         self.column = column
     
     def changeType(self, value):
-        self.value = value
+        if value in ["HORIFRONT", "HORIBACK", "VERTFRONT", "VERTBACK"]:
+            self.value = "SHIP"
+        else:
+            self.value = value
         
         self.setPixmap(eval(value))
 
@@ -169,7 +175,7 @@ class GameWindow(QMainWindow):
         
         #GAME
         self.game = battleshipslib.board()
-        self.game.ships = [2]
+        self.game.ships = [3]
         
         self.VALUES = []
         self.SHOTS = []
@@ -377,8 +383,45 @@ class GameWindow(QMainWindow):
         self.setCentralWidget(Widget)
         
     def syncLists(self):
+        def ship(value):
+            if value == "SHIP":
+                return True
+            return False
+        
         for row in range(0, len(self.game.values)):
             for column in range(0, len(self.game.values[row])):
+                if self.game.values[row][column] == "SHIP":
+                    if row - 1 < 0:
+                        above = "EMPTY"
+                    else: 
+                        above = self.game.values[row - 1][column]
+                    if row + 1 == len(self.VALUES):
+                        below = "EMPTY"
+                    else:
+                        below = self.game.values[row + 1][column]
+                    if column - 1 < 0:
+                        left = "EMPTY"
+                    else:
+                        left = self.game.values[row][column - 1]
+                    if column + 1 == len(self.VALUES[0]):
+                        right = "EMPTY"
+                    else:
+                        right = self.game.values[row][column + 1]
+                    
+                    if ship(above) and not ship(below):
+                        self.VALUES[row][column].changeType("VERTBACK")
+                    elif not ship(above) and ship(below):
+                        self.VALUES[row][column].changeType("VERTFRONT")
+                    elif ship(left) and not ship(right):
+                        self.VALUES[row][column].changeType("HORIBACK")
+                    elif not ship(left) and ship(right):
+                        self.VALUES[row][column].changeType("HORIFRONT")
+                    else:
+                        self.VALUES[row][column].changeType("SHIP")
+                    
+                    continue
+                
+                
                 self.VALUES[row][column].changeType(self.game.values[row][column])
                 self.SHOTS[row][column].changeType(self.game.shots[row][column])        
     
