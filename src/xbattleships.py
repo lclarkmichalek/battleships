@@ -233,16 +233,22 @@ class GameWindow(QMainWindow):
             if len(text.split('.')) == 4:
                 try:
                     self.game.connection.setClient(text)
-                except Exception:
+                except Exception, e:
+                    log(Exception, e)
                     QMessageBox.critical(self, 'Error', 'Could not connect to the other player')
                 else:
                     self.finishedConnecting()
             elif text == '':
                 #Because the socket.accept() call blocks, this message will never be shown.
                 #I don't think it is possible to fix this atm. Timeout on accept() maybe?
-                self.statusBar().showMessage('Waiting for other player to connect',15000)
-                
-                self.game.connection.setServer()
+                #self.statusBar().showMessage('Waiting for other player to connect',15000)
+                try:
+                    self.game.connection.setServer()
+                except Exception, e:
+                    log(Exception, e)
+                    QMessageBox.critical(self, 'Error', 'Could not connect to the other player')
+                else:
+                    self.finishedConnecting()
             else:
                 QMessageBox.critical(self, 'Error', 'Invalid connection code')
         
@@ -421,9 +427,8 @@ class GameWindow(QMainWindow):
                     
                     continue
                 
-                
+                self.SHOTS[row][column].changeType(self.game.shots[row][column])
                 self.VALUES[row][column].changeType(self.game.values[row][column])
-                self.SHOTS[row][column].changeType(self.game.shots[row][column])        
     
     def createBoard(self):
         FullLayout = QGridLayout()

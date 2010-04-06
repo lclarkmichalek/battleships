@@ -31,7 +31,7 @@ ip = s.getsockname()[0]
 del s
 
 global port
-port = 1770
+port = 1771
 
 def log(*args):
     for arg in args:
