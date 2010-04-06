@@ -396,6 +396,9 @@ class GameWindow(QMainWindow):
         
         for row in range(0, len(self.game.values)):
             for column in range(0, len(self.game.values[row])):
+                
+                self.SHOTS[row][column].changeType(self.game.shots[row][column])
+                
                 if self.game.values[row][column] == "SHIP":
                     if row - 1 < 0:
                         above = "EMPTY"
@@ -427,7 +430,6 @@ class GameWindow(QMainWindow):
                     
                     continue
                 
-                self.SHOTS[row][column].changeType(self.game.shots[row][column])
                 self.VALUES[row][column].changeType(self.game.values[row][column])
     
     def createBoard(self):
