@@ -358,6 +358,7 @@ class GameWindow(QMainWindow):
     
     def close(self):
         self.game.close()
+        app.quit()
         
     def WonGame(self):
         #TODO: Make sparkly
