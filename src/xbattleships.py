@@ -217,7 +217,6 @@ class GameWindow(QMainWindow):
                    '\n\nEnter coordinates in the form \'A1,B3\', with A1 being the start of the ship, and B3 being the end',
                    '\n\n']
         
-        
         self.Output.setText(''.join(content))
         
         self.connect(self.Input, SIGNAL("editingFinished ()"),
@@ -230,6 +229,7 @@ class GameWindow(QMainWindow):
         dialog = ConnectionDialog()
         if dialog.exec_():
             text = decode(dialog.Input.text())
+            
             if len(text.split('.')) == 4:
                 try:
                     self.game.connection.setClient(text)
